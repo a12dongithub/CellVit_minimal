@@ -19,6 +19,46 @@ from pathlib import Path
 from typing import Callable, List, Literal, Union, Tuple
 
 import numpy as np
+import sys
+from unittest.mock import MagicMock
+mock_ray = MagicMock()
+def remote_decorator_shim(*args, **kwargs):
+    def decorator(cls_or_func):
+        # Create a wrapper class that adds .remote methods which just call the original methods
+        if isinstance(cls_or_func, type):
+            class ShimClass(cls_or_func):
+                @classmethod
+                def remote(cls, *args, **kwargs):
+                    instance = cls(*args, **kwargs)
+                    # For every callable method, add a .remote attribute that calls the method
+                    for attr_name in dir(instance):
+                        if not attr_name.startswith('_'):
+                            attr = getattr(instance, attr_name)
+                            if callable(attr):
+                                # We need to attach a .remote to the method
+                                wrapper = MagicMock()
+                                wrapper.remote = attr
+                                setattr(instance, attr_name, wrapper)
+                    return instance
+            return ShimClass
+        else:
+            return cls_or_func
+    return decorator
+
+def init_shim(*args, **kwargs):
+    pass
+
+def get_shim(x):
+    return x
+
+def is_initialized_shim():
+    return True
+
+mock_ray.remote.side_effect = remote_decorator_shim
+mock_ray.init.side_effect = init_shim
+mock_ray.get.side_effect = get_shim
+mock_ray.is_initialized.side_effect = is_initialized_shim
+sys.modules["ray"] = mock_ray
 import ray
 import torch
 import torch.nn as nn
