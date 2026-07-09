@@ -30,15 +30,18 @@ def remote_decorator_shim(*args, **kwargs):
                 @classmethod
                 def remote(cls, *args, **kwargs):
                     instance = cls(*args, **kwargs)
+                    class MethodWrapper:
+                        def __init__(self, method):
+                            self._method = method
+                            self.remote = method
+                        def __call__(self, *a, **kw):
+                            return self._method(*a, **kw)
                     # For every callable method, add a .remote attribute that calls the method
                     for attr_name in dir(instance):
                         if not attr_name.startswith('_'):
                             attr = getattr(instance, attr_name)
                             if callable(attr):
-                                # We need to attach a .remote to the method
-                                wrapper = MagicMock()
-                                wrapper.remote = attr
-                                setattr(instance, attr_name, wrapper)
+                                setattr(instance, attr_name, MethodWrapper(attr))
                     return instance
             return ShimClass
         else:
