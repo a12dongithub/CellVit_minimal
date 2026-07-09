@@ -177,9 +177,9 @@ class DetectionCellPostProcessorCupy:
                     * channel 3: Horizontal-Vertical nuclei mapping (Y)
         """
         predictions = predictions_.copy()
-        predictions["nuclei_type_map"] = cp.asarray(predictions["nuclei_type_map"])
-        predictions["nuclei_binary_map"] = cp.asarray(predictions["nuclei_binary_map"])
-        predictions["hv_map"] = cp.asarray(predictions["hv_map"])
+        predictions["nuclei_type_map"] = cp.asarray(predictions["nuclei_type_map"].contiguous())
+        predictions["nuclei_binary_map"] = cp.asarray(predictions["nuclei_binary_map"].contiguous())
+        predictions["hv_map"] = cp.asarray(predictions["hv_map"].contiguous())
 
         return self._stack_pred_maps(
             predictions["nuclei_type_map"],
