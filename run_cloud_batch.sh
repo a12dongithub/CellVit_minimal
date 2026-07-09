@@ -17,8 +17,8 @@ if [ ! -d "$ENV_DIR" ]; then
     
     echo "Installing PyTorch and CuPy..."
     python -m pip install "numpy<2.0"
-    python -m pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu128 --no-cache-dir
-    python -m pip install "cupy-cuda12x<14.0.0"
+    python -m pip install torch==2.2.2+cu118 torchvision==0.17.2+cu118 torchaudio==2.2.2+cu118 --index-url https://download.pytorch.org/whl/cu118 --no-cache-dir
+    python -m pip install "cupy-cuda11x<14.0.0"
     
     echo "Installing other dependencies..."
     python -m pip install einops timm shapely ujson tqdm scikit-image scipy matplotlib pandas colorama numba Pillow "ray==2.10.0" opencv-python-headless openslide-python openslide-bin pathopatch python-snappy "pydantic<2.0"
