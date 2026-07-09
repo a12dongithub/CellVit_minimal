@@ -28,17 +28,18 @@ def process_single_svs(svs_path, gpu_id, args):
         "process_wsi",
         "--wsi_path", str(svs_path)
     ]
+    log_dir = Path("logs")
+    log_dir.mkdir(exist_ok=True)
+    log_file_path = log_dir / f"{svs_path.name}.log"
     
-    print(f"[{svs_path.name}] Starting on GPU {gpu_id}...")
+    print(f"[{svs_path.name}] Starting on GPU {gpu_id}... (tail -f {log_file_path} for progress)")
     try:
-        result = subprocess.run(cmd, check=True, capture_output=True, text=True)
+        with open(log_file_path, "w") as log_file:
+            subprocess.run(cmd, check=True, stdout=log_file, stderr=subprocess.STDOUT)
         print(f"[{svs_path.name}] Successfully completed on GPU {gpu_id}")
         return True
     except subprocess.CalledProcessError as e:
-        print(f"[{svs_path.name}] Error processing! Command exited with {e.returncode}")
-        print(f"[{svs_path.name}] --- ERROR OUTPUT ---")
-        print(e.stderr if e.stderr else e.stdout)
-        print(f"[{svs_path.name}] ----------------------")
+        print(f"[{svs_path.name}] Error processing! Command exited with {e.returncode}. See {log_file_path} for details.")
         return False
 
 def worker(svs_path, gpu_queue, args):
