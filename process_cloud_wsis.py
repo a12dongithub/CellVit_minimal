@@ -84,8 +84,9 @@ def main():
         gpu_queue.put(i)
 
     print("Starting Global Ray Cluster to prevent worker conflicts...")
-    subprocess.run([sys.executable, "-m", "ray.scripts.scripts", "stop"], capture_output=True)
-    subprocess.run([sys.executable, "-m", "ray.scripts.scripts", "start", "--head", "--port=6379", "--include-dashboard=false"], check=True)
+    ray_bin = os.path.join(os.path.dirname(sys.executable), "ray")
+    subprocess.run([ray_bin, "stop"], capture_output=True)
+    subprocess.run([ray_bin, "start", "--head", "--port=6379", "--include-dashboard=false"], check=True)
     os.environ["RAY_ADDRESS"] = "127.0.0.1:6379"
 
     # Process files concurrently
@@ -103,7 +104,7 @@ def main():
                     print(f"[{svs_path.name}] Generated an exception: {exc}")
     finally:
         print("Shutting down Global Ray Cluster...")
-        subprocess.run([sys.executable, "-m", "ray.scripts.scripts", "stop"], capture_output=True)
+        subprocess.run([ray_bin, "stop"], capture_output=True)
 
     print(f"\n============================================================")
     print(f" Batch processing complete.")
