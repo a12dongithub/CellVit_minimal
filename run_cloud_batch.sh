@@ -21,7 +21,7 @@ if [ ! -d "$ENV_DIR" ]; then
     python -m pip install "cupy-cuda12x>=13.0.0"
     
     echo "Installing other dependencies..."
-    python -m pip install einops timm shapely ujson tqdm scikit-image scipy matplotlib pandas colorama numba Pillow ray opencv-python-headless openslide-python openslide-bin
+    python -m pip install einops timm shapely ujson tqdm scikit-image scipy matplotlib pandas colorama numba Pillow ray opencv-python-headless openslide-python openslide-bin pathopatch
 else
     echo "Activating existing local conda environment: $ENV_DIR"
     conda activate "$ENV_DIR"
