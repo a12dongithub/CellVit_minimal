@@ -83,18 +83,27 @@ def main():
     for i in range(args.num_gpus):
         gpu_queue.put(i)
 
+    print("Starting Global Ray Cluster to prevent worker conflicts...")
+    subprocess.run([sys.executable, "-m", "ray.scripts.scripts", "stop"], capture_output=True)
+    subprocess.run([sys.executable, "-m", "ray.scripts.scripts", "start", "--head", "--port=6379", "--include-dashboard=false"], check=True)
+    os.environ["RAY_ADDRESS"] = "127.0.0.1:6379"
+
     # Process files concurrently
     success_count = 0
-    with ThreadPoolExecutor(max_workers=args.num_gpus) as executor:
-        futures = {executor.submit(worker, svs_path, gpu_queue, args): svs_path for svs_path in svs_files}
-        
-        for future in as_completed(futures):
-            svs_path = futures[future]
-            try:
-                if future.result():
-                    success_count += 1
-            except Exception as exc:
-                print(f"[{svs_path.name}] Generated an exception: {exc}")
+    try:
+        with ThreadPoolExecutor(max_workers=args.num_gpus) as executor:
+            futures = {executor.submit(worker, svs_path, gpu_queue, args): svs_path for svs_path in svs_files}
+            
+            for future in as_completed(futures):
+                svs_path = futures[future]
+                try:
+                    if future.result():
+                        success_count += 1
+                except Exception as exc:
+                    print(f"[{svs_path.name}] Generated an exception: {exc}")
+    finally:
+        print("Shutting down Global Ray Cluster...")
+        subprocess.run([sys.executable, "-m", "ray.scripts.scripts", "stop"], capture_output=True)
 
     print(f"\n============================================================")
     print(f" Batch processing complete.")
