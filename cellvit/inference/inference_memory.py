@@ -15,13 +15,13 @@ from pathlib import Path
 from typing import Union
 
 import pandas as pd
-import ray
 import torch
 import tqdm
 import ujson
 from cellvit.data.dataclass.cell_graph import CellGraphDataWSI
 from cellvit.data.dataclass.wsi import WSIMetadata
 from cellvit.inference.inference_disk import CellViTInference
+import ray
 from cellvit.inference.postprocessing_cupy import (
     BatchPoolingActor,
     DetectionCellPostProcessorCupy,
