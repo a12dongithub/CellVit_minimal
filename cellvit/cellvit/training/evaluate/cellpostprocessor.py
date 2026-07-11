@@ -118,23 +118,24 @@ class CellPostProcessor:
 
         for iteration in range(20):
             poly_list = []
+            poly_to_uid = {}
             for idx, cell_info in merged_cells.iterrows():
                 poly = Polygon(cell_info["contour"])
                 if not poly.is_valid:
                     self.logger.debug("Found invalid polygon - Fixing with buffer 0")
                     multi = poly.buffer(0)
                     if isinstance(multi, MultiPolygon):
-                        if len(multi) > 1:
-                            poly_idx = np.argmax([p.area for p in multi])
-                            poly = multi[poly_idx]
+                        if len(multi.geoms) > 1:
+                            poly_idx = np.argmax([p.area for p in multi.geoms])
+                            poly = multi.geoms[poly_idx]
                             poly = Polygon(poly)
                         else:
-                            poly = multi[0]
+                            poly = multi.geoms[0]
                             poly = Polygon(poly)
                     else:
                         poly = Polygon(multi)
-                poly.uid = idx
                 poly_list.append(poly)
+                poly_to_uid[id(poly)] = idx
 
             # use an strtree for fast querying
             tree = strtree.STRtree(poly_list)
@@ -144,18 +145,26 @@ class CellPostProcessor:
             overlaps = 0
 
             for query_poly in poly_list:
-                if query_poly.uid not in iterated_cells:
-                    intersected_polygons = tree.query(
+                query_uid = poly_to_uid[id(query_poly)]
+                if query_uid not in iterated_cells:
+                    intersected_res = tree.query(
                         query_poly
                     )  # this also contains a self-intersection
+                    
+                    if len(intersected_res) > 0 and not isinstance(intersected_res[0], (int, np.integer)):
+                        intersected_polygons = intersected_res
+                    else:
+                        intersected_polygons = [poly_list[i] for i in intersected_res]
+                        
                     if (
                         len(intersected_polygons) > 1
                     ):  # we have more at least one intersection with another cell
                         submergers = []  # all cells that overlap with query
                         for inter_poly in intersected_polygons:
+                            inter_uid = poly_to_uid[id(inter_poly)]
                             if (
-                                inter_poly.uid != query_poly.uid
-                                and inter_poly.uid not in iterated_cells
+                                inter_uid != query_uid
+                                and inter_uid not in iterated_cells
                             ):
                                 if (
                                     query_poly.intersection(inter_poly).area
@@ -167,20 +176,20 @@ class CellPostProcessor:
                                 ):
                                     overlaps = overlaps + 1
                                     submergers.append(inter_poly)
-                                    iterated_cells.add(inter_poly.uid)
+                                    iterated_cells.add(inter_uid)
                         # catch block: empty list -> some cells are touching, but not overlapping strongly enough
                         if len(submergers) == 0:
-                            merged_idx.append(query_poly.uid)
+                            merged_idx.append(query_uid)
                         else:  # merging strategy: take the biggest cell, other merging strategies needs to get implemented
                             selected_poly_index = np.argmax(
                                 np.array([p.area for p in submergers])
                             )
-                            selected_poly_uid = submergers[selected_poly_index].uid
+                            selected_poly_uid = poly_to_uid[id(submergers[selected_poly_index])]
                             merged_idx.append(selected_poly_uid)
                     else:
                         # no intersection, just add
-                        merged_idx.append(query_poly.uid)
-                    iterated_cells.add(query_poly.uid)
+                        merged_idx.append(query_uid)
+                    iterated_cells.add(query_uid)
 
             self.logger.info(
                 f"Iteration {iteration}: Found overlap of # cells: {overlaps}"
