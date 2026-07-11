@@ -144,12 +144,12 @@ class OverlapCellCleaner:
                     self.logger.debug("Found invalid polygon - Fixing with buffer 0")
                     multi = poly.buffer(0)
                     if isinstance(multi, MultiPolygon):
-                        if len(multi) > 1:
-                            poly_idx = np.argmax([p.area for p in multi])
-                            poly = multi[poly_idx]
+                        if len(multi.geoms) > 1:
+                            poly_idx = np.argmax([p.area for p in multi.geoms])
+                            poly = multi.geoms[poly_idx]
                             poly = Polygon(poly)
                         else:
-                            poly = multi[0]
+                            poly = multi.geoms[0]
                             poly = Polygon(poly)
                     else:
                         poly = Polygon(multi)
