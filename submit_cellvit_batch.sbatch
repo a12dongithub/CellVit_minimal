@@ -3,6 +3,8 @@
 #SBATCH --partition=talon-gpu32
 #SBATCH --nodes=1
 #SBATCH --ntasks=1
+#SBATCH --cpus-per-task=32
+#SBATCH --mem=128G
 #SBATCH --gres=gpu:6
 #SBATCH --time=90:00:00
 #SBATCH --output=cellvit_batch_%j.log
